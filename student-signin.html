@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Sign-In</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 1rem; /* Add some padding for smaller screens */
+            box-sizing: border-box;
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Styles for the custom message box */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            text-align: center;
+            min-width: 250px;
+            max-width: 90%;
+            border: 1px solid #e2e8f0;
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .message-box h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .message-box p {
+            margin-bottom: 1.5rem;
+            color: #555;
+        }
+        .message-box button {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .message-box button:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+    </style>
+</head>
+<body>
+    <div class="flex flex-col items-center justify-center w-full max-w-md p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+        <!-- Application Title -->
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">
+            Pharmawiz Attendance
+        </h1>
+
+        <!-- Sign-In Form Title -->
+        <h2 class="text-2xl font-bold text-gray-700 mb-8 text-center">
+            Student Sign-In
+        </h2>
+
+        <!-- Sign-In Form -->
+        <form id="signInForm" class="w-full space-y-6">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-200 ease-in-out"
+                    required
+                >
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-200 ease-in-out"
+                    required
+                >
+            </div>
+            <button
+                type="submit"
+                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200 ease-in-out transform hover:scale-105"
+            >
+                Sign In
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(title, message, callback) {
+            const overlay = document.createElement('div');
+            overlay.className = 'message-box-overlay';
+            document.body.appendChild(overlay);
+
+            const messageBox = document.createElement('div');
+            messageBox.className = 'message-box';
+            messageBox.innerHTML = `
+                <h3>${title}</h3>
+                <p>${message}</p>
+                <button id="messageBoxOkBtn">OK</button>
+            `;
+            document.body.appendChild(messageBox);
+
+            document.getElementById('messageBoxOkBtn').onclick = () => {
+                document.body.removeChild(overlay);
+                document.body.removeChild(messageBox);
+                if (callback) callback();
+            };
+        }
+
+        // Get the form element
+        const signInForm = document.getElementById('signInForm');
+
+        // Base URL for your Django backend API
+        // IMPORTANT: If you deploy this to GitHub Pages, this URL will need to be
+        // your actual deployed backend URL (e.g., your_server_ip:8000/api/)
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+        // Add an event listener for the form submission
+        signInForm.addEventListener('submit', async function(event) {
+            // Prevent the default form submission behavior
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/student-login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // HTTP status 200-299
+                    // Login successful
+                    showMessageBox('Login Successful', data.message, () => {
+                        // Store student_id in sessionStorage for use on the next page
+                        sessionStorage.setItem('student_id', data.student_id);
+                        sessionStorage.setItem('student_username', data.username);
+                        // Navigate to the QR scanning page
+                        window.location.href = 'student_qr_scanner.html'; // Ensure this file exists
+                    });
+                } else {
+                    // Login failed (e.g., 400 Bad Request, 401 Unauthorized)
+                    const errorMessage = data.non_field_errors ? data.non_field_errors.join(', ') : 'Invalid username or password.';
+                    showMessageBox('Login Failed', errorMessage);
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                showMessageBox('Error', 'Could not connect to the server. Please try again later.');
+            }
+        });
+    </script>
+</body>
+</html>
